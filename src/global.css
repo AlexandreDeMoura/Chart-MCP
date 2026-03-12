@@ -1,0 +1,128 @@
+:root {
+  --app-bg: var(--color-background-primary, #f3f7fb);
+  --app-surface: var(--color-background-secondary, #ffffff);
+  --app-surface-strong: var(--color-background-tertiary, #eaf1f8);
+  --app-border: var(--color-border-primary, #d5e0ed);
+  --app-text: var(--color-text-primary, #122033);
+  --app-muted: var(--color-text-secondary, #4f6075);
+  --app-accent: var(--color-brand-primary, #0f766e);
+  --app-radius-sm: var(--border-radius-md, 10px);
+  color-scheme: light dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans, "Avenir Next", "Segoe UI", sans-serif);
+  color: var(--app-text);
+  background: transparent;
+}
+
+.app-shell {
+  margin: 0 auto;
+  padding: 8px;
+}
+
+.chart-stage {
+  min-height: 220px;
+  padding: 4px;
+}
+
+.chart-empty {
+  min-height: 120px;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  color: var(--app-muted);
+  font-size: 0.9rem;
+}
+
+.chart-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.chart-grid {
+  stroke: var(--app-border);
+  stroke-width: 1;
+}
+
+.axis-label,
+.tick-label {
+  fill: var(--app-muted);
+  font-size: 12px;
+  font-family: var(--font-sans, "Avenir Next", "Segoe UI", sans-serif);
+}
+
+.pie-slice {
+  stroke: var(--app-surface);
+  stroke-width: 2;
+}
+
+.pie-center-label {
+  fill: var(--app-muted);
+  font-size: 12px;
+  text-anchor: middle;
+}
+
+.pie-center-value {
+  fill: var(--app-text);
+  font-size: 18px;
+  font-weight: 650;
+  text-anchor: middle;
+}
+
+.area-fill {
+  fill-opacity: 0.32;
+}
+
+.area-line {
+  fill: none;
+  stroke: var(--app-accent);
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.line-point {
+  stroke: var(--app-surface);
+  stroke-width: 2;
+}
+
+.funnel-band {
+  stroke: color-mix(in srgb, var(--app-surface) 70%, transparent);
+  stroke-width: 2;
+}
+
+.funnel-label,
+.funnel-value {
+  fill: #ffffff;
+  text-anchor: middle;
+  pointer-events: none;
+}
+
+.funnel-label {
+  font-size: 13px;
+  font-weight: 620;
+}
+
+.funnel-value {
+  font-size: 11px;
+  opacity: 0.92;
+}
+
+.chart-point {
+  transition: opacity 150ms ease, transform 150ms ease;
+}
+
+.chart-point.is-dimmed {
+  opacity: 0.28;
+}
+
+.chart-point.is-active {
+  opacity: 1;
+}

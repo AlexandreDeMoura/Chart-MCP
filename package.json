@@ -1,0 +1,36 @@
+{
+  "name": "chart-mcp",
+  "version": "1.0.0",
+  "description": "Boilerplate MCP Apps server with a tool + interactive UI resource.",
+  "main": "dist/main.js",
+  "scripts": {
+    "dev": "cross-env NODE_ENV=development concurrently \"cross-env INPUT=mcp-app.html vite build --watch\" \"tsx --watch main.ts\"",
+    "dev:stdio": "tsx main.ts --stdio",
+    "build": "cross-env INPUT=mcp-app.html vite build && tsc -p tsconfig.json",
+    "serve": "node dist/main.js",
+    "serve:stdio": "node dist/main.js --stdio",
+    "start": "npm run serve"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "dependencies": {
+    "@modelcontextprotocol/ext-apps": "^1.2.0",
+    "@modelcontextprotocol/sdk": "^1.27.1",
+    "cors": "^2.8.6",
+    "express": "^5.2.1",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/node": "^25.4.0",
+    "concurrently": "^9.2.1",
+    "cross-env": "^10.1.0",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3",
+    "vite": "^7.3.1",
+    "vite-plugin-singlefile": "^2.3.0"
+  }
+}
