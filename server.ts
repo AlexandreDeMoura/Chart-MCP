@@ -49,8 +49,7 @@ const chartInputPointSchema = z.object({
     .describe("Optional point color as hex code.")
 });
 
-const chartInputSchema = z.object({
-  chartType: chartTypeSchema,
+const chartBaseInputSchema = z.object({
   title: z.string().min(1).max(100).optional().describe("Optional chart title."),
   subtitle: z.string().max(180).optional().describe("Optional supporting subtitle."),
   unit: z.string().max(24).optional().describe("Optional unit suffix such as $, users, %, or ms."),
@@ -83,7 +82,7 @@ const chartOutputSchema = z.object({
 });
 
 type ChartType = z.infer<typeof chartTypeSchema>;
-type ChartInput = z.infer<typeof chartInputSchema>;
+type ChartBaseInput = z.infer<typeof chartBaseInputSchema>;
 type ChartOutput = z.infer<typeof chartOutputSchema>;
 
 function round(value: number, digits = 2): number {
@@ -224,8 +223,8 @@ async function loadUiBundle(): Promise<string> {
   ].join("");
 }
 
-function normalizePayload(args: ChartInput): ChartOutput {
-  const title = normalizeTitle(args.chartType, args.title);
+function normalizePayload(chartType: ChartType, args: ChartBaseInput): ChartOutput {
+  const title = normalizeTitle(chartType, args.title);
 
   const pointsBase = args.data.map((point, index) => ({
     label: point.label.trim() || `Point ${index + 1}`,
@@ -238,7 +237,7 @@ function normalizePayload(args: ChartInput): ChartOutput {
   const points = pointsBase.map((point, index) => {
     const percentage = total > 0 ? round((point.value / total) * 100, 2) : 0;
 
-    if (args.chartType !== "funnel") {
+    if (chartType !== "funnel") {
       return {
         ...point,
         percentage
@@ -263,10 +262,10 @@ function normalizePayload(args: ChartInput): ChartOutput {
     };
   });
 
-  const warnings = buildWarnings(args.chartType, points, total);
+  const warnings = buildWarnings(chartType, points, total);
 
   const payload: ChartOutput = {
-    chartType: args.chartType,
+    chartType: chartType,
     title,
     subtitle: args.subtitle,
     unit: args.unit,
@@ -294,58 +293,90 @@ export function createServer(): McpServer {
     }
   );
 
+  function formatToolResult(payload: ChartOutput) {
+    const lines: string[] = [];
+
+    lines.push(payload.summary);
+
+    if (payload.warnings.length > 0) {
+      lines.push("");
+      lines.push(`Warnings: ${payload.warnings.join(" ")}`);
+    }
+
+    lines.push("");
+    lines.push("Data breakdown:");
+    for (const point of payload.points) {
+      const pct = `${round(point.percentage, 1).toFixed(1)}%`;
+      lines.push(`- ${point.label}: ${formatValue(point.value, payload.unit)} (${pct})`);
+    }
+
+    lines.push("");
+    lines.push(`Total: ${formatValue(payload.total, payload.unit)}`);
+
+    if (payload.notes) {
+      lines.push("");
+      lines.push(payload.notes);
+    }
+
+    return {
+      content: [
+        {
+          type: "text" as const,
+          text: lines.join("\n")
+        }
+      ],
+      structuredContent: payload
+    };
+  }
+
+  const toolMeta = {
+    _meta: {
+      ui: {
+        resourceUri: APP_RESOURCE_URI
+      }
+    }
+  };
+
   registerAppTool(
     server,
-    "render_chart",
+    "render_pie_chart",
     {
-      title: "Render Interactive Chart",
+      title: "Render Pie Chart",
       description:
-        "Create an interactive chart view from structured data. Supports pie charts, area line charts, and funnel charts.",
-      inputSchema: chartInputSchema,
+        "Render an interactive donut/pie chart. Use this when the user wants to visualize part-to-whole relationships, proportions, or percentage breakdowns across categories (e.g. market share, budget allocation, survey responses). Best with 2-6 slices.",
+      inputSchema: chartBaseInputSchema,
       outputSchema: chartOutputSchema,
-      _meta: {
-        ui: {
-          resourceUri: APP_RESOURCE_URI
-        }
-      }
+      ...toolMeta
     },
-    async (args) => {
-      const payload = normalizePayload(args);
+    async (args) => formatToolResult(normalizePayload("pie", args))
+  );
 
-      const lines: string[] = [];
+  registerAppTool(
+    server,
+    "render_area_line_chart",
+    {
+      title: "Render Area Line Chart",
+      description:
+        "Render an interactive area line chart. Use this when the user wants to visualize trends over time or ordered sequences — such as revenue over months, user growth, temperature changes, or any continuous metric tracked across ordered intervals.",
+      inputSchema: chartBaseInputSchema,
+      outputSchema: chartOutputSchema,
+      ...toolMeta
+    },
+    async (args) => formatToolResult(normalizePayload("area-line", args))
+  );
 
-      lines.push(payload.summary);
-
-      if (payload.warnings.length > 0) {
-        lines.push("");
-        lines.push(`Warnings: ${payload.warnings.join(" ")}`);
-      }
-
-      lines.push("");
-      lines.push("Data breakdown:");
-      for (const point of payload.points) {
-        const pct = `${round(point.percentage, 1).toFixed(1)}%`;
-        lines.push(`- ${point.label}: ${formatValue(point.value, payload.unit)} (${pct})`);
-      }
-
-      lines.push("");
-      lines.push(`Total: ${formatValue(payload.total, payload.unit)}`);
-
-      if (payload.notes) {
-        lines.push("");
-        lines.push(payload.notes);
-      }
-
-      return {
-        content: [
-          {
-            type: "text",
-            text: lines.join("\n")
-          }
-        ],
-        structuredContent: payload
-      };
-    }
+  registerAppTool(
+    server,
+    "render_funnel_chart",
+    {
+      title: "Render Funnel Chart",
+      description:
+        "Render an interactive funnel chart. Use this when the user wants to visualize stage-by-stage conversion or drop-off in a sequential process — such as sales pipelines, signup flows, hiring funnels, or any workflow where items progressively filter down through stages.",
+      inputSchema: chartBaseInputSchema,
+      outputSchema: chartOutputSchema,
+      ...toolMeta
+    },
+    async (args) => formatToolResult(normalizePayload("funnel", args))
   );
 
   registerAppResource(
