@@ -74,10 +74,11 @@ const state: {
   pinnedIndex: null
 };
 
-const app = new App({
-  name: "chart-mcp-view",
-  version: "0.2.0"
-});
+const app = new App(
+  { name: "chart-mcp-view", version: "0.2.0" },
+  {},
+  { autoResize: false }
+);
 
 function requireElement<T extends Element>(selector: string): T {
   const element = document.querySelector<T>(selector);
@@ -855,6 +856,18 @@ function renderChart(payload: ChartPayload): void {
   chartEl.append(chartNode);
 }
 
+function notifySize(): void {
+  requestAnimationFrame(() => {
+    const rect = chartEl.getBoundingClientRect();
+    if (rect.width > 0 && rect.height > 0) {
+      app.sendSizeChanged({
+        width: Math.ceil(rect.width),
+        height: Math.ceil(rect.height)
+      });
+    }
+  });
+}
+
 function renderPayload(payload: ChartPayload): void {
   state.payload = payload;
   state.activeIndex = null;
@@ -862,6 +875,7 @@ function renderPayload(payload: ChartPayload): void {
 
   renderChart(payload);
   applySelectionStyles();
+  notifySize();
 }
 
 function applyHostContext(): void {
